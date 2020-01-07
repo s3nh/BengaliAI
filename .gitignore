@@ -1,0 +1,10 @@
+
+pretrain/
+/data/
+/venv/
+/*.whl/
+*.pth
+*.csv
+/build/
+/dist/
+
