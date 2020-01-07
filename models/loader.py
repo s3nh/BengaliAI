@@ -19,7 +19,7 @@ def main():
     model = fishnet150()
     checkpoint = load_checkpoint(FISHNET_PATH)
     best_prec1 = checkpoint['best_prec1'] 
-    print(best_prec1)
-    model.load_state_dict(checkpoint['state_dict'])
+    model.load_state_dict(checkpoint['state_dict'], strict = False)
+    print(model)
 if __name__ == "__main__":
     main()
