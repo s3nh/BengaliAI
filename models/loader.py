@@ -21,5 +21,14 @@ def main():
     best_prec1 = checkpoint['best_prec1'] 
     model.load_state_dict(checkpoint['state_dict'], strict = False)
     print(model)
+    model = model.cuda()
+    x = torch.zeros((1, 3, 224, 224))
+    output = model(x.cuda())
+    print(output.shape)
+
+    for p in model.parameters():
+        p.requires_grad = False
+    backbone = list(model.children())[:-1]
+
 if __name__ == "__main__":
     main()
