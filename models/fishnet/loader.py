@@ -6,9 +6,10 @@ import numpy as np
 import torchvision 
 from torchvision import datasets, models, transforms
 import matplotlib.pyplot as plt 
-from models.net_factory import fishnet150
+from models.fishnet.net_factory import fishnet150
 from torch.nn import Flatten
 FISHNET_PATH = 'pretrain/fishnet/fishnet150_ckpt_welltrained.tar'
+
 def load_checkpoint(path):
     checkpoint = torch.load(path)
     return checkpoint
