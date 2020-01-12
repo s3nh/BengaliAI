@@ -1,0 +1,1 @@
+from models.fishnet.loader import MoFishnet150

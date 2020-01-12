@@ -1,4 +1,5 @@
 # Bengali AI data loader helper scripts. 
+from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np 
 from PIL import Image
@@ -26,9 +27,18 @@ def _convert_data(datafile = 'data/train_image_data_0.parquet', train_data = pd.
     b_train_data = pd.merge(pd.read_parquet(datafile), 
                        train_data, on = 'image_id').drop(['image_id'], axis=1)
     train_image = b_train_data.drop(['grapheme_root', 'vowel_diacritic', 'consonant_diacritic','grapheme'], axis = 1)
-    train_image = resize(train_image)/255
-    train_image = train_image.values.reshape(-1, 128 , 128, 1) # Image with 64x64x1 diament
+    train_image = resize(train_image, size = 128)/255
+    labels = ['grapheme_root', 'vowel_diacritic', 'consonant_diacritic']
     return train_image
+
+
+def get_and_split(df = pd.DataFrame(), label = 'grapheme_root')
+    assert df.shape[0] > 0, 'Data is not properly defined' 
+    Y_train = b_train_data[label]    
+    Y_train = pd.get_dummies(Y_train).values
+    x_train, x_test, y_train, y_test =  train_test_split(df, Y_train, test_size = 0.1, 
+    random_state = 4321)
+
 
 
 def main():
@@ -45,9 +55,8 @@ def main():
     print("Unique VOW  UQ {}".format(vow_uq))
     print("Unique CON  UQ {}".format(con_uq))
 
-    train_image = _convert_data(train_data)
-    print(train_image.shape)
-
+    train_image = _convert_data(train_data = train_data)
+    x_train, x_test, y_train, y_test = get_and_split(train_image, label = 'grapheme_root')
 
 if __name__ == "__main__":
     main()
