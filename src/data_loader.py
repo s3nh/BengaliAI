@@ -44,20 +44,16 @@ def get_and_split(df = pd.DataFrame(), label = 'grapheme_root'):
 
 def main():
     train_data = pd.read_csv('data/train.csv')
-    print("Train dataset observations {}".format(train_data.shape[0]))
-    # Grapheme root unique 
-    root_uq = len(np.unique(train_data.grapheme_root))
-    #Vowel diactric 
+
+    
     vow_uq = len(np.unique(train_data.vowel_diacritic))
-    #Consonant diactritic 
-    con_uq = len(np.unique(train_data.consonant_diacritic))
-
-    print("Unique ROOT UQ {}".format(root_uq))
-    print("Unique VOW  UQ {}".format(vow_uq))
-    print("Unique CON  UQ {}".format(con_uq))
-
     train_image = _convert_data(train_data = train_data)
     x_train, x_test, y_train, y_test = get_and_split(train_image, label = 'grapheme_root')
+    print(y_train[:5])
 
+    train_loader = torch.utils.data.DataLoader(x_train, y_train, batch_size = 16, 
+    shuffle=True)
+
+    
 if __name__ == "__main__":
     main()
