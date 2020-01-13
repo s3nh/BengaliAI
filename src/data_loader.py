@@ -119,6 +119,7 @@ def main():
     train_images = prepare_image(datadir = 'data', data_type='train', 
     submission=True, indices=indices)
 
+    train_dataset = BengaliAIDataset(train_images, train_labels)
 
 
 if __name__ == "__main__":
