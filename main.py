@@ -14,11 +14,17 @@ def resize(df, size=64, need_progress_bar=True):
     resized = pd.DataFrame(resized).T
     return resized
 
+
 class GraphemeDataset(Dataset):
     def __init__(self, df, label, type = 'train'):
         self.df = df
         self.label = label
 
+    def __len__(self):
+        return len(self.label)
+
+    def __getitem__(self):
+        pass
 
     
 FISHNET_PATH = 'pretrain/fishnet/fishnet150_ckpt_welltrained.tar'

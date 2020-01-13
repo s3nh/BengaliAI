@@ -1,5 +1,6 @@
 # Bengali AI data loader helper scripts. 
 from sklearn.model_selection import train_test_split
+from torch.utils.data  import Dataset
 import gc
 import pandas as pd
 import numpy as np 
@@ -42,18 +43,83 @@ def get_and_split(df = pd.DataFrame(), label = 'grapheme_root'):
     x_train, x_test, y_train, y_test =  train_test_split(df, Y_train, test_size = 0.1, random_state = 4321)
     return x_train, x_test, y_train, y_test
 
+
+class DatasetMixin(Dataset):
+    """
+    Data transformer wrapper
+    """
+    def __init__(self, transform = None):
+        self.transform = transform
+
+    def __getitem__(self, index):
+        if torch.is_tensor(index):
+            index = index.tolist()
+        if isinstance(index, slice):
+            current, stop, step = index.indices(len(self))
+            return [self.get_example_wrapper(i) for i in 
+            six.moves.range(current, stop, step)]
+        elif isinstance(index, list) or isinstance(index, np.ndarray):
+            return [self.get_example_wrapper(i) for i in index]         
+        else:
+            return self.get_example_wrapper(index)
+
+    def __len__(self):
+        raise NotImplementedError
+
+    def get_example_wrapper(self, i):
+        example = self.get_example(i)
+        if self.transform:
+            example = self.transform(example)
+        return example
+
+    def get_example(self, i):
+        raise NotImplementedError  
+
+class BengaliAIDataset(DatasetMixin):
+    def __init__(self, images, labels=None, transform=None, indices = None):
+        super(BengaliAIDataset, self).__init__(transform=transform)
+        self.images = images
+        self.labels = labels
+        if indices is None:
+            indices = np.arange(len(images))
+        self.indices = indices 
+        self.train = labels is not None
+
+    def __len__(self):
+        return len(self.indices)
+
+    def get_example(self, i):
+        i = self.indices[i]
+        x = self.images[i]
+        x = (255-x).astype(np.float32) / 255. 
+        if self.train:
+            y = self.labels[i]
+            return x, y 
+        else:
+            return x
+
+def prepare_image(datadir, data_type = 'train', 
+    submission = True, indices = [0, 1, 2, 3]):
+    if submission:
+        image_df_list = [pd.read_parquet(os.path.join(datadir, f'{data_type}_image_data_{i}.parquet')) for i in indices]
+    print("Number of images {}".format(len(image_df_list)))    
+    HEIGHT = 137
+    WIDTH = 236 
+    images = [df.iloc[:, 1:].values.reshape(-1, HEIGHT, WIDTH) for df in image_df_list]
+    del image_df_list
+    gc.collect()
+    images = np.concatenate(images, axis=0)
+    return images
+
 def main():
     train_data = pd.read_csv('data/train.csv')
-
-    
     vow_uq = len(np.unique(train_data.vowel_diacritic))
-    train_image = _convert_data(train_data = train_data)
-    x_train, x_test, y_train, y_test = get_and_split(train_image, label = 'grapheme_root')
-    print(y_train[:5])
+    train_labels = train_data[['grapheme_root', 'vowel_diacritic', 'consonant_diacritic']].values 
+    indices =  [0,1,2,3]
+    train_images = prepare_image(datadir = 'data', data_type='train', 
+    submission=True, indices=indices)
 
-    train_loader = torch.utils.data.DataLoader(x_train, y_train, batch_size = 16, 
-    shuffle=True)
 
-    
+
 if __name__ == "__main__":
     main()
