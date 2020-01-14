@@ -111,7 +111,7 @@ def prepare_image(datadir, data_type = 'train',
     images = [df.iloc[:, 1:].values.reshape(-1, HEIGHT, WIDTH) for df in image_df_list]
     del image_df_list
     gc.collect()
-    images = np.concatenate(images, axis=0)
+    #    images = np.concatenate(images, axis=0)
     return images
 
 # Based n corochan preprocess 
@@ -157,12 +157,18 @@ def main():
     submission=True, indices=indices)
 
     train_dataset = BengaliAIDataset(train_images, train_labels)
-    x, y = train_dataset.get_example(100)
+    del train_images
+    del train_labels
+    gc.collect()
+    x, y = train_dataset.get_example(1)
     print(x)
     print(y)
     x=  x.cuda() 
     mod = MoFishnet150(path=FISHNET_PATH)
     mod.cuda()
+    print("Transform to cuda")
+    print("One step before output")
+
     output1, output2, output3 = mod(x)
     print(output1, output2, output3)
 
