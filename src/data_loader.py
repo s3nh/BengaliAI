@@ -1,5 +1,6 @@
 # Bengali AI data loader helper scripts. 
 from sklearn.model_selection import train_test_split
+from torch import nn.Module
 from torch.utils.data  import Dataset
 import gc
 import pandas as pd
@@ -9,6 +10,8 @@ import random
 import os 
 import cv2 
 import gc
+import torch.optim as optim
+from models.fishnet.loader import MoFishnet150, load_checkpoint
 
 DATA_PATH = 'data/'
 FILES = os.listdir(DATA_PATH)
@@ -111,6 +114,40 @@ def prepare_image(datadir, data_type = 'train',
     images = np.concatenate(images, axis=0)
     return images
 
+# Based n corochan preprocess 
+
+
+def _define_criterion(net):
+    loss1 = nn.CrossEntropyLoss()
+    loss2 = nn.CrossEntropyLoss()
+    loss3 = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(net.parameters(), lr = 0.01)
+    return loss1, loss2, loss3, optimizer 
+
+def _train_(dataset = train_dataset, net):
+    crit1, crit2, crit3  , optimizer = _define_criterion(net)
+    # From tutorial params 
+    for epoch in range(2):
+        for i, data in enumerate(dataset, 0):
+            inputs, labels = data
+
+        label1 = labels[0]
+        label2 = labels[1]
+        label3 = labels[2]
+
+        optimizer.zero_grad()
+
+        output1, output2, output3 = net(inputs)
+        loss1 = crit1(output1, label1) 
+        loss2 = crit2(output2, label2)
+        loss3 = crit3(output3, label3) 
+
+        loss1.backward()
+        loss2.backward()
+        loss3.backward()
+        optimizer.step()
+
+
 def main():
     train_data = pd.read_csv('data/train.csv')
     vow_uq = len(np.unique(train_data.vowel_diacritic))
@@ -120,6 +157,12 @@ def main():
     submission=True, indices=indices)
 
     train_dataset = BengaliAIDataset(train_images, train_labels)
+    x, y = train_dataset.get_example(1)
+    print(x)
+    print(y)
+
+
+
 
 
 if __name__ == "__main__":
