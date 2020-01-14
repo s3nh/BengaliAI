@@ -1,6 +1,6 @@
 # Bengali AI data loader helper scripts. 
 from sklearn.model_selection import train_test_split
-from torch import nn.Module
+import torch.nn as nn
 from torch.utils.data  import Dataset
 import gc
 import pandas as pd
@@ -124,7 +124,7 @@ def _define_criterion(net):
     optimizer = torch.optim.Adam(net.parameters(), lr = 0.01)
     return loss1, loss2, loss3, optimizer 
 
-def _train_(dataset = train_dataset, net):
+def _train_(dataset , net = nn.Module()):
     crit1, crit2, crit3  , optimizer = _define_criterion(net)
     # From tutorial params 
     for epoch in range(2):
@@ -157,12 +157,14 @@ def main():
     submission=True, indices=indices)
 
     train_dataset = BengaliAIDataset(train_images, train_labels)
-    x, y = train_dataset.get_example(1)
+    x, y = train_dataset.get_example(100)
     print(x)
     print(y)
-
-
-
+    x=  x.cuda() 
+    mod = MoFishnet150(path=FISHNET_PATH)
+    mod.cuda()
+    output1, output2, output3 = mod(x)
+    print(output1, output2, output3)
 
 
 if __name__ == "__main__":
