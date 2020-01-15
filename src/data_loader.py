@@ -109,9 +109,10 @@ def prepare_image(datadir, data_type = 'train',
     HEIGHT = 137
     WIDTH = 236 
     images = [df.iloc[:, 1:].values.reshape(-1, HEIGHT, WIDTH) for df in image_df_list]
+    images = 
     del image_df_list
     gc.collect()
-    #    images = np.concatenate(images, axis=0)
+    images = np.concatenate(images, axis=0)
     return images
 
 # Based n corochan preprocess 
@@ -150,9 +151,9 @@ def _train_(dataset , net = nn.Module()):
 
 def main():
     train_data = pd.read_csv('data/train.csv')
-    vow_uq = len(np.unique(train_data.vowel_diacritic))
+    vow_uq = len(np.uniquestrain_data.vowel_diacritic))
     train_labels = train_data[['grapheme_root', 'vowel_diacritic', 'consonant_diacritic']].values 
-    indices =  [0,1,2,3]
+    indices =  [0]
     train_images = prepare_image(datadir = 'data', data_type='train', 
     submission=True, indices=indices)
 
