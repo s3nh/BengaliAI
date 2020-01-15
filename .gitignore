@@ -1,3 +1,4 @@
+*.zip
 *.egg-info*
 pretrain/
 /data/

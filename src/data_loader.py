@@ -102,7 +102,7 @@ class BengaliAIDataset(DatasetMixin):
             return x
 
 def prepare_image(datadir, data_type = 'train', 
-    submission = True, indices = [0, 1, 2, 3]):
+    submission = True, indices = [0]):
     if submission:
         image_df_list = [pd.read_parquet(os.path.join(datadir, f'{data_type}_image_data_{i}.parquet')) for i in indices]
     print("Number of images {}".format(len(image_df_list)))    
@@ -157,7 +157,7 @@ def main():
     submission=True, indices=indices)
 
     train_dataset = BengaliAIDataset(train_images, train_labels)
-    x, y = train_dataset.get_example(100)
+    x, y = train_dataset.get_example(1)
     print(x)
     print(y)
     x=  x.cuda() 
