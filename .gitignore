@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 *.zip
+=======
+*.png
+>>>>>>> ffa9c175e1444eda0e4122dd764acf419e6560d3
 *.egg-info*
 pretrain/
 /data/

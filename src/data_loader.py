@@ -109,6 +109,7 @@ def prepare_image(datadir, data_type = 'train',
     HEIGHT = 137
     WIDTH = 236 
     images = [df.iloc[:, 1:].values.reshape(-1, HEIGHT, WIDTH) for df in image_df_list]
+    images = 
     del image_df_list
     gc.collect()
     images = np.concatenate(images, axis=0)
@@ -150,19 +151,28 @@ def _train_(dataset , net = nn.Module()):
 
 def main():
     train_data = pd.read_csv('data/train.csv')
-    vow_uq = len(np.unique(train_data.vowel_diacritic))
+    vow_uq = len(np.uniquestrain_data.vowel_diacritic))
     train_labels = train_data[['grapheme_root', 'vowel_diacritic', 'consonant_diacritic']].values 
-    indices =  [0,1,2,3]
+    indices =  [0]
     train_images = prepare_image(datadir = 'data', data_type='train', 
     submission=True, indices=indices)
 
     train_dataset = BengaliAIDataset(train_images, train_labels)
+<<<<<<< HEAD
+=======
+    del train_images
+    del train_labels
+    gc.collect()
+>>>>>>> ffa9c175e1444eda0e4122dd764acf419e6560d3
     x, y = train_dataset.get_example(1)
     print(x)
     print(y)
     x=  x.cuda() 
     mod = MoFishnet150(path=FISHNET_PATH)
     mod.cuda()
+    print("Transform to cuda")
+    print("One step before output")
+
     output1, output2, output3 = mod(x)
     print(output1, output2, output3)
 
