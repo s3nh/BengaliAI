@@ -54,6 +54,7 @@ class BengaliDataLoader(Dataset):
 def main():
     train = BengaliDataLoader('data_png/', 'data/train.csv')
     print(train[9])
+    train_data_loader = data.DataLoader(train, batch_size = 32, shuffle=True)
     
 if __name__ == '__main__':
     main()

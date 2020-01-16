@@ -25,6 +25,7 @@ class BengaliDataLoader(Dataset):
         self.consonant = self.label_file.consonant_diacritic
         self.label_file = self.label_file.image_id
         self.transform = None
+       
         
     # Magic function 
     def __len__(self):
