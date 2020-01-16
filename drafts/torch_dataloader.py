@@ -14,17 +14,15 @@ def main():
 
     for el in range(3):
 
-        train = pd.read_parquest('data/train_image_data_{}.parquet'.format(el))
+        train = pd.read_parquet('data/train_image_data_{}.parquet'.format(el))
 
         # Indices 
         # Get indices, just to know how to name files 
 
         _ixes = train.image_id
         # Iter image by image 
-        for iter in range(train.shape[0]):
-            _name =  _ixes[iter]
-            _img = train.loc[_name, :].drop('image_id').values.reshape(137, 236)
-            # Change type frmo object to uint8 
+        for _num,  _name in enumerate(_ixes):
+            _img = train.iloc[_num, :].drop('image_id').values.reshape(137, 236)
             _img = _img.astype(np.uint8)
             cv2.resize(_img, (128, 128))
             cv2.imwrite(os.path.join('data_png', '{}.png'.format(_name)), _img)
