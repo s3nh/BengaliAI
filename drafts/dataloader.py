@@ -24,8 +24,12 @@ class BengaliDataLoader(Dataset):
         self.vowel = self.label_file.vowel_diacritic
         self.consonant = self.label_file.consonant_diacritic
         self.label_file = self.label_file.image_id
-        self.transform = None
-        
+        self.transform = transforms.Compose([
+            transforms.ToTensor(), 
+            transforms.Normalize(mean = [0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225])
+        )
+                                            
     # Magic function 
     def __len__(self):
         return len(self.label_file)
@@ -55,6 +59,6 @@ def main():
     train = BengaliDataLoader('data_png/', 'data/train.csv')
     print(train[9])
     train_data_loader = data.DataLoader(train, batch_size = 32, shuffle=True)
-    
+     
 if __name__ == '__main__':
     main()

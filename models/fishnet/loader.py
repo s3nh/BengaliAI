@@ -34,15 +34,18 @@ class MoFishnet150(nn.Module):
         print(self.features)
         self.pool = nn.MaxPool2d(2)
         #50176
-        self.fc1 = nn.Linear(50176, 11)
-        self.fc2 = nn.Linear(50176,168)
-        self.fc3 = nn.Linear(50176,7)
+        _shape = 31552 
+        self.fc1 = nn.Linear(_shape, 11)
+        self.fc2 = nn.Linear(_shape,168)
+        self.fc3 = nn.Linear(_shape,7)
 
     def forward(self, image):
         x = self.features(image)
         print(x.shape)
         x = self.pool(x)
+        print(x.shape)
         x = x.view(x.size(0), -1)
+        print(x.shape)
         x1 = self.fc1(x)
         x2 = self.fc2(x)
         x3 = self.fc3(x) 

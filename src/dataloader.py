@@ -7,13 +7,10 @@ import numpy as np
 import matplotlib.pyplot as plt 
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
-
-
+from PIL import Image
 
 import warnings
 warnings.filterwarnings("ignore")
-
-
 
 class BengaliDataLoader(Dataset):
     def __init__(self, image_folder, label_file, transform=None):
@@ -24,19 +21,24 @@ class BengaliDataLoader(Dataset):
         self.vowel = self.label_file.vowel_diacritic
         self.consonant = self.label_file.consonant_diacritic
         self.label_file = self.label_file.image_id
-        self.transform = None
+        self.transform =  transforms.Compose([
+            transforms.ToTensor(), 
+            transforms.Normalize(mean = [0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225])
+        )
        
-        
-    # Magic function 
     def __len__(self):
         return len(self.label_file)
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        img_name = os.path.join(self.image_folder, '{}.png'.format(self.label_file.iloc[idx]) 
-                                )
-        image = io.imread(img_name)
+        trans = transforms.ToTensor()
+        img_name = os.path.join(self.image_folder, '{}.png'.format(self.label_file.iloc[idx]) )
+        image=Image.open(img_name).convert("RGB")
+        image = trans(image) 
+        
+        #image = transforms.ToPILImage()(image).convert("RGB")
         label = self.label_file.iloc[idx]
         grapheme = self.grapheme.iloc[idx]
         vowel = self.vowel.iloc[idx]
