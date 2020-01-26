@@ -12,10 +12,10 @@ from PIL import Image
 import warnings
 warnings.filterwarnings("ignore")
 
+
 class BengaliDataLoader(Dataset):
-    def __init__(self, image_folder, label_file, transform=None):
+    def __init__(self, image_folder, label_file, transform=False):
         self.image_folder = image_folder  
-        
         self.label_file = pd.read_csv(label_file)
         self.grapheme  =  self.label_file.grapheme_root
         self.vowel = self.label_file.vowel_diacritic
@@ -24,8 +24,8 @@ class BengaliDataLoader(Dataset):
         self.transform =  transforms.Compose([
             transforms.ToTensor(), 
             transforms.Normalize(mean = [0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225])
-        )
+                         std=[0.229, 0.224, 0.225]),
+        ])
        
     def __len__(self):
         return len(self.label_file)
@@ -36,7 +36,7 @@ class BengaliDataLoader(Dataset):
         trans = transforms.ToTensor()
         img_name = os.path.join(self.image_folder, '{}.png'.format(self.label_file.iloc[idx]) )
         image=Image.open(img_name).convert("RGB")
-        image = trans(image) 
+        #image = trans(image) 
         
         #image = transforms.ToPILImage()(image).convert("RGB")
         label = self.label_file.iloc[idx]
@@ -51,7 +51,7 @@ class BengaliDataLoader(Dataset):
         vowel  = label[1]
         consonant = label[2] 
         if self.transform:
-            sample = self.transform(sample)
+            sample['image'] = self.transform(sample['image'])
         return sample
        
 def main():
