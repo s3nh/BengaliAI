@@ -17,27 +17,24 @@ def resize(df, size=64, need_progress_bar=True):
         resized[df.index[i]] = image.reshape(-1)
     resized = pd.DataFrame(resized).T
     return resized
-    
-FISHNET_PATH = 'pretrain/fishnet/fishnet150_ckpt_welltrained.tar'
-def main():
+
+def _train(epoch, history, train_data_loader):
     mod =  _DenseNet()
     mod =  mod.cuda()
-    train = BengaliDataLoader('data_png/', 'data/train.csv')
-    train_data_loader = DataLoader(train, batch_size = 32, shuffle=True)
-    
+
     criterion = nn.CrossEntropyLoss()
-    """
-    loss1 = nn.CrossEntropyLoss()
-    loss2 = nn.CrossEntropyLoss()
-    loss3 = nn.CrossEntropyLoss()
-    """
+    history = pd.DataFrame()
+    valid_recall = 0.0 
+    best_valid_recall = 0.0 
+    n_epochs = 10
+    
     losses = []
     accs = []
     acc = 0.0
     total = 0.0  
-    runing_loss = 0.0 
-    runing_acc = 0.0 
-    runing_recall = 0.0 
+    running_loss = 0.0 
+    running_acc = 0.0 
+    running_recall = 0.0 
     optimizer = torch.optim.Adam(mod.parameters(), lr = 0.01)
     for target in train_data_loader:
 
@@ -56,7 +53,6 @@ def main():
         _vowel = _vowel.to(device)
        
         output1, output2, output3 = mod(_images)  
-        print(output1, output2, output3)
         loss1 = criterion(output1, _consonant)
         loss2 = criterion(output2, _grapheme)
         loss3 = criterion(output3, _vowel)
@@ -65,15 +61,45 @@ def main():
         
         running_acc += (output1.argmax(1) == _consonant).float().mean() 
         running_acc += (output2.argmax(1) == _grapheme).float().mean()
-        runing_acc  += (output3.argmax(1) == _vowel).float().mean()
-        
+        running_acc  += (output3.argmax(1) == _vowel).float().mean()
         
         (loss1+loss2+loss3).backward()        
         optimizer.step()
         optimizer.zero_grad()
-        
         acc = running_acc/total 
-
+        print(acc)
+    losses.append(running_loss/len(train_loader)*3)
+    accs.append(running_acc/(len(train_data_loader)*3))
+    print(' train : {}\tacc : {:.2f}%'.format(epoch, running_acc/(len(train_data_loader)*3)))
+    print('loss : {:/4f}'.format(running_loss/len(train_data_loader)))
+    
+    torch.cuda.empty_cache() 
+    gc.collect()
+    
+    
+    history.loc[epoch, 'train_loss'] = losses[0]
+    history.loc[epoch, 'train_acc'] = accs[0].cpu().numpy()
+   
+FISHNET_PATH = 'pretrain/fishnet/fishnet150_ckpt_welltrained.tar'
+def main():
+    train = BengaliDataLoader('data_png/', 'data/train.csv')
+    train_data_loader = DataLoader(train, batch_size = 32, shuffle=True)
+    n_epochs = 10
+    history = pd.DataFrame() 
+    for epoch in range(n_epochs):
+        torch.cuda.empty_cache()
+        gc.collect()
+        _train(epoch, history, train_data_loader)
+        
+        torch.save(model.state_dict(), 'densenet201_{}.pth'.format(epoch))      
+        
+    """
+    loss1 = nn.CrossEntropyLoss()
+    loss2 = nn.CrossEntropyLoss()
+    loss3 = nn.CrossEntropyLoss()
+    """
+    
+    
 if __name__ == "__main__":
     main()
 
