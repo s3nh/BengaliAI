@@ -1,5 +1,6 @@
+import sklearn
+from sklearn.metrics import recall_score
 import gc
-#from models.fishnet.loader import MoFishnet150, load_checkpoint
 import pandas as pd 
 from torch.utils.data import Dataset, DataLoader
 from src.dataloader import BengaliDataLoader
@@ -9,7 +10,31 @@ import torch.nn as nn
 device = 'cuda'
 from pretrain.pretrain_loader import _DenseNet
 
+def macro_recall(pred_y, y, n_grapheme = 168, n_vowel = 11, n_consonant = 7):
+    pred_y = torch.split(pred_y, [n_grapheme, n_vowel, n_consonant], dim=1)
+    pred_labels = [torch.argmax(py, dim=1).cpu().numpy() for py in pred_y]
+    
+    y = y.cpu().numpy()
+    
+    recall_grapheme = sklearn.metrics.recall_score(pred_labels[0], y[:, 0], 
+                                                   average='macro')
+    recall_vowel = sklearn.metrics.recall_score(pred_labels[1], y[:, 1], 
+                                                average='macro')
+    recall_consonant = sklearn.metrics.recall_score(pred_labels[2], y[:, 2], 
+                                                    average='macro')
+    
+    scores = [recall_grapheme, recall_vowel, recall_consonant]
+    final_score = np.average(scores, weights = [2,1,1])
+    return final_score 
 
+def dataset_split(df = Dataset, _ratio = 0.2):
+    n_images = len(df)
+    assert n_images > 0 
+    n_train = int(n_images * _ratio)
+    n_test = int(n_images * (1-_ratio))
+    train_df, test_df = torch.utils.data.random_split(df, [n_train, n_test])
+    return train_df, test_df
+     
 def resize(df, size=64, need_progress_bar=True):
     resized = {}
     for i in range(df.shape[0]):
@@ -36,70 +61,67 @@ def _train(epoch, history, train_data_loader):
     running_acc = 0.0 
     running_recall = 0.0 
     optimizer = torch.optim.Adam(mod.parameters(), lr = 0.01)
-    for target in train_data_loader:
 
+    for target in train_data_loader:
         _images = target['image']
+        
+        
         total += len(_images)
         _label = target['label']
         _consonant = target['consonant']
         _grapheme = target['grapheme']
         _vowel = target['vowel']
 
-        # Switch to device 
-        #_label = _label.to(device)
         _images = _images.to(device) 
         _consonant = _consonant.to(device)
         _grapheme = _grapheme.to(device)
         _vowel = _vowel.to(device)
-       
         output1, output2, output3 = mod(_images)  
+
         loss1 = criterion(output1, _consonant)
         loss2 = criterion(output2, _grapheme)
         loss3 = criterion(output3, _vowel)
 
         running_loss = loss1.item() + loss2.item() + loss3.item() 
-        
         running_acc += (output1.argmax(1) == _consonant).float().mean() 
         running_acc += (output2.argmax(1) == _grapheme).float().mean()
         running_acc  += (output3.argmax(1) == _vowel).float().mean()
-        
         (loss1+loss2+loss3).backward()        
         optimizer.step()
         optimizer.zero_grad()
         acc = running_acc/total 
-        print(acc)
-    losses.append(running_loss/len(train_loader)*3)
+
+    losses.append(running_loss/len(train_data_loader)*3)
     accs.append(running_acc/(len(train_data_loader)*3))
+
     print(' train : {}\tacc : {:.2f}%'.format(epoch, running_acc/(len(train_data_loader)*3)))
-    print('loss : {:/4f}'.format(running_loss/len(train_data_loader)))
-    
+    print('loss : {:.4f}'.format(running_loss/len(train_data_loader)))
+
     torch.cuda.empty_cache() 
     gc.collect()
-    
     
     history.loc[epoch, 'train_loss'] = losses[0]
     history.loc[epoch, 'train_acc'] = accs[0].cpu().numpy()
    
-FISHNET_PATH = 'pretrain/fishnet/fishnet150_ckpt_welltrained.tar'
 def main():
-    train = BengaliDataLoader('data_png/', 'data/train.csv')
-    train_data_loader = DataLoader(train, batch_size = 32, shuffle=True)
+    print("Beginning data loading") 
+    data  = BengaliDataLoader('data_png/', 'data/train.csv')
+    # Data split 
+    print("Beginning data split")
+    train, test = dataset_split(data, _ratio = 0.2) 
+    train_data_loader = DataLoader(train, batch_size = 256, shuffle=True)
+    test_data_loader = DataLoader(test, batch_size=256, shuffle=True)
+    print(len(train_data_loader)) 
+    print(len(test_data_loader))
+    
     n_epochs = 10
     history = pd.DataFrame() 
     for epoch in range(n_epochs):
+        print("Started processing for epoch {}".format(epoch))
         torch.cuda.empty_cache()
         gc.collect()
         _train(epoch, history, train_data_loader)
-        
         torch.save(model.state_dict(), 'densenet201_{}.pth'.format(epoch))      
-        
-    """
-    loss1 = nn.CrossEntropyLoss()
-    loss2 = nn.CrossEntropyLoss()
-    loss3 = nn.CrossEntropyLoss()
-    """
-    
     
 if __name__ == "__main__":
     main()
-
