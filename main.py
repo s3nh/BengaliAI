@@ -43,7 +43,7 @@ def resize(df, size=64, need_progress_bar=True):
     resized = pd.DataFrame(resized).T
     return resized
 
-def _train(epoch, history, train_data_loader):
+def _train(history, train_data_loader, n_epochs = 10):
     mod =  _DenseNet()
     mod =  mod.cuda()
 
@@ -61,67 +61,60 @@ def _train(epoch, history, train_data_loader):
     running_acc = 0.0 
     running_recall = 0.0 
     optimizer = torch.optim.Adam(mod.parameters(), lr = 0.01)
+    for epoch in range(n_epochs):
+        print("Processing for epoch {}".format(epoch))
+        for _n , target in enumerate(train_data_loader):
+            _images = target['image']
+            total += len(_images)
+            _label = target['label']
+            _consonant = target['consonant']
+            _grapheme = target['grapheme']
+            _vowel = target['vowel']
 
-    for target in train_data_loader:
-        _images = target['image']
-        
-        
-        total += len(_images)
-        _label = target['label']
-        _consonant = target['consonant']
-        _grapheme = target['grapheme']
-        _vowel = target['vowel']
+            _images = _images.to(device) 
+            _consonant = _consonant.to(device)
+            _grapheme = _grapheme.to(device)
+            _vowel = _vowel.to(device)
+            output1, output2, output3 = mod(_images)  
 
-        _images = _images.to(device) 
-        _consonant = _consonant.to(device)
-        _grapheme = _grapheme.to(device)
-        _vowel = _vowel.to(device)
-        output1, output2, output3 = mod(_images)  
+            loss1 = criterion(output1, _consonant)
+            loss2 = criterion(output2, _grapheme)
+            loss3 = criterion(output3, _vowel)
 
-        loss1 = criterion(output1, _consonant)
-        loss2 = criterion(output2, _grapheme)
-        loss3 = criterion(output3, _vowel)
+            running_loss = loss1.item() + loss2.item() + loss3.item() 
+            running_acc += (output1.argmax(1) == _consonant).float().mean() 
+            running_acc += (output2.argmax(1) == _grapheme).float().mean()
+            running_acc  += (output3.argmax(1) == _vowel).float().mean()
+            (loss1+loss2+loss3).backward()        
+            optimizer.step()
+            optimizer.zero_grad()
+            acc = running_acc/total 
 
-        running_loss = loss1.item() + loss2.item() + loss3.item() 
-        running_acc += (output1.argmax(1) == _consonant).float().mean() 
-        running_acc += (output2.argmax(1) == _grapheme).float().mean()
-        running_acc  += (output3.argmax(1) == _vowel).float().mean()
-        (loss1+loss2+loss3).backward()        
-        optimizer.step()
-        optimizer.zero_grad()
-        acc = running_acc/total 
-
-    losses.append(running_loss/len(train_data_loader)*3)
-    accs.append(running_acc/(len(train_data_loader)*3))
-
-    print(' train : {}\tacc : {:.2f}%'.format(epoch, running_acc/(len(train_data_loader)*3)))
-    print('loss : {:.4f}'.format(running_loss/len(train_data_loader)))
-
-    torch.cuda.empty_cache() 
-    gc.collect()
+        losses.append(running_loss/len(train_data_loader)*3)
+        accs.append(running_acc/(len(train_data_loader)*3))
+        print(' train : {}\tacc : {:.2f}%'.format(epoch, running_acc/(len(train_data_loader)*3)))
+        print('loss : {:.4f}'.format(running_loss/len(train_data_loader)))
+        torch.cuda.empty_cache() 
+        gc.collect()
+        history.loc[epoch, 'train_loss'] = losses[0]
+        history.loc[epoch, 'train_acc'] = accs[0].cpu().numpy()
+        torch.save(mod.state_dict(), 'models/densenet_{}.pth'.format(epoch))
     
-    history.loc[epoch, 'train_loss'] = losses[0]
-    history.loc[epoch, 'train_acc'] = accs[0].cpu().numpy()
-   
 def main():
     print("Beginning data loading") 
     data  = BengaliDataLoader('data_png/', 'data/train.csv')
     # Data split 
     print("Beginning data split")
     train, test = dataset_split(data, _ratio = 0.2) 
-    train_data_loader = DataLoader(train, batch_size = 256, shuffle=True)
-    test_data_loader = DataLoader(test, batch_size=256, shuffle=True)
+    train_data_loader = DataLoader(train, batch_size = 128, shuffle=True)
+    test_data_loader = DataLoader(test, batch_size=128, shuffle=True)
     print(len(train_data_loader)) 
     print(len(test_data_loader))
     
-    n_epochs = 10
     history = pd.DataFrame() 
-    for epoch in range(n_epochs):
-        print("Started processing for epoch {}".format(epoch))
-        torch.cuda.empty_cache()
-        gc.collect()
-        _train(epoch, history, train_data_loader)
-        torch.save(model.state_dict(), 'densenet201_{}.pth'.format(epoch))      
+    torch.cuda.empty_cache()
+    gc.collect()
+    _train(history, train_data_loader, n_epochs = 250)
     
 if __name__ == "__main__":
     main()
