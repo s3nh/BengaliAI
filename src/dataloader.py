@@ -23,19 +23,19 @@ class BengaliTestLoader(Dataset):
                                  std = [0.229 ,0.224, 0.225]),
         ])
         
-        def __len__(self):
-            raise NotImplementedError 
-            
-        def __getitem__(self, idx):
-            if torch.is_tensor(idx):
-                idx = idx.tolist()
-            trans = transforms.ToTensor()
-            img_name = os.path.join(self.image_folder, '{}.png'.format(self.label_file.iloc[idx])) 
-            image = Image.open(img_name).convert('RGB')
-            label = self.label_file.iloc[idx]  
-            if self.transform:
-                sample['image'] = self.transform(sample['image'])
-            return sample
+    def __len__(self):
+        return len(self.label_file) 
+        
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+        trans = transforms.ToTensor()
+        img_name = os.path.join(self.image_folder, '{}.png'.format(self.label_file.iloc[idx])) 
+        image = Image.open(img_name).convert('RGB')
+        label = self.label_file.iloc[idx]  
+        if self.transform:
+            sample['image'] = self.transform(sample['image'])
+        return sample
             
 class BengaliDataLoader(Dataset):
     def __init__(self, image_folder, label_file, transform=False):
