@@ -9,6 +9,8 @@ import torch
 import torch.nn as nn
 device = 'cuda'
 from pretrain.pretrain_loader import _DenseNet
+from torch.utils.tensorboard import SummaryWriter
+
 
 def macro_recall(pred_y, y, n_grapheme = 168, n_vowel = 11, n_consonant = 7):
     pred_y = torch.split(pred_y, [n_grapheme, n_vowel, n_consonant], dim=1)
@@ -46,13 +48,10 @@ def resize(df, size=64, need_progress_bar=True):
 def _train(history, train_data_loader, n_epochs = 10):
     mod =  _DenseNet()
     mod =  mod.cuda()
-
     criterion = nn.CrossEntropyLoss()
     history = pd.DataFrame()
     valid_recall = 0.0 
     best_valid_recall = 0.0 
-    n_epochs = 10
-    
     losses = []
     accs = []
     acc = 0.0
@@ -61,8 +60,11 @@ def _train(history, train_data_loader, n_epochs = 10):
     running_acc = 0.0 
     running_recall = 0.0 
     optimizer = torch.optim.Adam(mod.parameters(), lr = 0.01)
+
+    writer = SummaryWriter()    
+    
     for epoch in range(n_epochs):
-        print("Processing for epoch {}".format(epoch))
+        print("Processing for epoch {} from {} epochs".format(epoch, n_epochs))
         for _n , target in enumerate(train_data_loader):
             _images = target['image']
             total += len(_images)
@@ -89,11 +91,14 @@ def _train(history, train_data_loader, n_epochs = 10):
             optimizer.step()
             optimizer.zero_grad()
             acc = running_acc/total 
-
+            writer.add_scalar('batch_acc', acc, _n) 
+   
         losses.append(running_loss/len(train_data_loader)*3)
         accs.append(running_acc/(len(train_data_loader)*3))
-        print(' train : {}\tacc : {:.2f}%'.format(epoch, running_acc/(len(train_data_loader)*3)))
-        print('loss : {:.4f}'.format(running_loss/len(train_data_loader)))
+        
+        
+        writer.add_scalar('Acc', acc, epoch) 
+        writer.add_scalar('Loss', running_loss, epoch) 
         torch.cuda.empty_cache() 
         gc.collect()
         history.loc[epoch, 'train_loss'] = losses[0]
@@ -103,18 +108,14 @@ def _train(history, train_data_loader, n_epochs = 10):
 def main():
     print("Beginning data loading") 
     data  = BengaliDataLoader('data_png/', 'data/train.csv')
-    # Data split 
     print("Beginning data split")
     train, test = dataset_split(data, _ratio = 0.2) 
     train_data_loader = DataLoader(train, batch_size = 128, shuffle=True)
     test_data_loader = DataLoader(test, batch_size=128, shuffle=True)
-    print(len(train_data_loader)) 
-    print(len(test_data_loader))
-    
     history = pd.DataFrame() 
     torch.cuda.empty_cache()
     gc.collect()
-    _train(history, train_data_loader, n_epochs = 250)
+    _train(history, train_data_loader, n_epochs = 50)
     
 if __name__ == "__main__":
     main()
