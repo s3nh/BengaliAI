@@ -115,7 +115,7 @@ def main():
     history = pd.DataFrame() 
     torch.cuda.empty_cache()
     gc.collect()
-    _train(history, train_data_loader, n_epochs = 50)
+    _train(history, train_data_loader, n_epochs = 150)
     
 if __name__ == "__main__":
     main()

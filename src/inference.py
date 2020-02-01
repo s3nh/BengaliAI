@@ -23,7 +23,7 @@ def get_params():
 def main():
     #model, test_data, predictions, batch_size  = get_params()
     #data = Resize(data)
-    test_image = BengaliTestLoader('data_test', 'data/test.csv')
+    test_image = BengaliTestLoader('data_test')
     test_loader = torch.utils.data.DataLoader(test_image, 
                                                 batch_size=1, 
                                                 shuffle=False) 
