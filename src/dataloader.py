@@ -13,10 +13,10 @@ import warnings
 warnings.filterwarnings("ignore")
 
 class BengaliTestLoader(Dataset):
-    def __init__(self, image_folder, label_file = 'data/test.csv', transform=False):
+    def __init__(self, image_folder, label_file = None, transform=False):
         self.image_folder = image_folder 
-        self.label_file = pd.read_csv(label_file)
-        self.label_file = self.label_file.image_id
+        self.label_file = label_file 
+        #self.label_file = self.label_file.image_id
         self.transform = transforms.Compose([
             transforms.ToTensor(), 
             transforms.Normalize(mean = [0.485, 0.456, 0.406], 
@@ -32,7 +32,7 @@ class BengaliTestLoader(Dataset):
         trans = transforms.ToTensor()
         img_name = os.path.join(self.image_folder, '{}.png'.format(self.label_file.iloc[idx])) 
         image = Image.open(img_name).convert('RGB')
-        label = self.label_file.iloc[idx]  
+        #label = self.label_file.iloc[idx]  
         if self.transform:
             sample['image'] = self.transform(sample['image'])
         return sample

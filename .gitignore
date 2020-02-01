@@ -12,4 +12,4 @@ pretrain/
 *.csv
 /build/
 /dist/
-
+runs/*
